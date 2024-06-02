@@ -1,17 +1,3 @@
-""" Detect Mouth State - Open/Closed
-
- author  : ashraf minhaj
- personal: ashraf_minhaj@yahoo.com
-
-(c) Ashraf Minhaj
-"""
-
-""" install -
-$ pip install opencv-contrib-python
-$ pip install mediapipe
-"""
-
-# import necessary librariy(ies)
 import cv2 
 import mediapipe as mp 
 
@@ -23,11 +9,20 @@ face_mesh = face_mesh_detector.FaceMesh(max_num_faces=1,
 										min_tracking_confidence=0.5)
 
 # variables for lips
-upper_lip = 0
-lower_lip = 14
+upper_lip = 12
+lower_lip = 16
+
+left_lip = 76
+right_lip = 292
 
 upper_loc = 0
 lower_loc = 0
+
+left_loc = 0
+right_loc = 0
+
+forhead_x = 0
+forhead_y = 0
 
 text = ''
 
@@ -35,15 +30,12 @@ count = 0
 
 while True:
     count += 1
-    if count % 10 == 0:
-        continue
     ret, frame = cam.read()    # read from camera
     frame = cv2.flip(frame, 1) # mirror frame
     
     rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)  # change image color from BGR to RGB
     output = face_mesh.process(rgb_frame)               # output of detection
     landmark_points = output.multi_face_landmarks       # all landmark points
-    # print(landmark_points)
 
     if landmark_points:
         frame_height, frame_width, dimension = frame.shape  # get frame things, dimension is not needed in our application
@@ -63,21 +55,45 @@ while True:
                 lower_loc = y_on_frame
                 cv2.circle(img=frame, center=(x_on_frame, y_on_frame), radius = 3, color=(0,255,0))
 
-        diff = int(lower_loc - upper_loc)
-        print(diff)
+            elif id == left_lip:
+                left_loc = x_on_frame
+                cv2.circle(img=frame, center=(x_on_frame, y_on_frame), radius = 3, color=(0,255,0))
+
+            elif id == right_lip:
+                right_loc = x_on_frame
+                cv2.circle(img=frame, center=(x_on_frame, y_on_frame), radius = 3, color=(0,255,0))
+
+            elif id == 67:
+                forhead_x = x_on_frame
+                forhead_y = y_on_frame
+
+            # else:
+            #     # cv2.circle(img=frame, center=(x_on_frame, y_on_frame), radius = 3, color=(0,0,255))
+            #     cv2.putText(img = frame, 
+			# 		text = str(id), 
+			# 		org = (x_on_frame, y_on_frame), 
+			# 		fontFace = cv2.FONT_HERSHEY_DUPLEX, 
+			# 		fontScale = 0.3, 
+			# 		color = (125, 246, 55),
+			# 		thickness = 1)
+
+        y_diff = int(lower_loc - upper_loc)
+        x_diff = int(right_loc - left_loc)
+        print(y_diff/x_diff*100)
 
         #show diff/text
-        if diff > 20:
-            text = 'Talking'
-        else:
-            text = 'Not talking'
+        if count % 10 == 0:
+            if y_diff/x_diff*100 > 25 :
+                text = 'Talking'
+            else:
+                text = 'Not talking'
         cv2.putText(img = frame, 
 					text = text, 
-					org = (10, 100), 
+					org = (forhead_x, forhead_y), 
 					fontFace = cv2.FONT_HERSHEY_DUPLEX, 
-					fontScale = 2, 
+					fontScale = 1, 
 					color = (125, 246, 55),
-					thickness = 3)
+					thickness = 2)
             
     
     cv2.imshow('img', frame)  # show image
